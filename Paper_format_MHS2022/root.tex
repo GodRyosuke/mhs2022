@@ -1,0 +1,189 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%2345678901234567890123456789012345678901234567890123456789012345678901234567890
+%        1         2         3         4         5         6         7         8
+
+%\documentclass[letterpaper, 10 pt, conference]{mhs}  % Comment this line out if you need a4paper
+
+\documentclass[a4paper, 10pt, conference]{mhs}      % Use this line for a4 paper
+
+\IEEEoverridecommandlockouts                              % This command is only needed if 
+% you want to use the \thanks command
+
+\overrideIEEEmargins                                      % Needed to meet printer requirements.
+
+%In case you encounter the following error:
+%Error 1010 The PDF file may be corrupt (unable to open PDF file) OR
+%Error 1000 An error occurred while parsing a contents stream. Unable to analyze the PDF file.
+%This is a known problem with pdfLaTeX conversion filter. The file cannot be opened with acrobat reader
+%Please use one of the alternatives below to circumvent this error by uncommenting one or the other
+%\pdfobjcompresslevel=0
+%\pdfminorversion=4
+
+% See the \addtolength command later in the file to balance the column lengths
+% on the last page of the document
+
+%\renewcommand{\thesection}{\arabic{section}}
+%\renewcommand{\thesubsection}{\thesection.\arabic{subsection}}
+%\renewcommand{\thesubsubsection}{\arabic{subsubsection}}
+
+% The following packages can be found on http:\\www.ctan.org
+\usepackage{graphics} % for pdf, bitmapped graphics files
+\usepackage{epsfig} % for postscript graphics files
+\usepackage{mathptmx} % assumes new font selection scheme installed
+\usepackage{times} % assumes new font selection scheme installed
+\usepackage{amsmath} % assumes amsmath package installed
+\usepackage{amssymb}  % assumes amsmath package installed
+\usepackage{here}
+\usepackage{threeparttable}
+\usepackage{caption}
+
+\captionsetup[table]{labelsep=period, labelfont=bf, justification=raggedright, singlelinecheck=off}
+%\usepackage{titlesec}
+
+%\titleformat*{\section}{\sc \bfseries \centering}
+%\titleformat*{\subsection}{\sc \bfseries}
+
+\title{\Large \bf
+Preparation of Papers for MHS 2022\\
+\large33rd 2022 International Symposium on Micro-NanoMechatronics and Human Science\\
+(From Micro \& Nano Scale Systems to Robotics \& Mechatronics Systems)\\
+Symposium on ``Science of Soft Robots"\\
+Grant-in-Aid for Scientific Research on Innovative Areas, MEXT, Japan\\
+Symposium on ``HYPER-ADAPTABILITY"\\
+Grant-in-Aid for Scientific Research on Innovative Areas, MEXT, Japan
+}
+
+
+\author{All Author$^{1}$ and Researcher$^{2}$\\% <-this % stops a space
+Department \& Affiliation, Address (Street, City \& Zip Code), Country\\\\}
+
+
+\begin{document}
+	
+	\maketitle
+	\thispagestyle{empty}
+	\pagestyle{empty}
+	
+	
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	\begin{abstract}
+    ロボットによる無人溶接を行うため、カメラによる溶接線の検出は大きな課題である。
+    溶接線はさまざまなパターンがあるが、本研究では円柱を平面に対し垂直に溶接する
+    場合の溶接線を検出する処理を提案する。
+
+    深度カメラから取得した点群から円柱と平面を推定し、解析的に交線を計算する。
+    この処理では、機械学習を使っていないので、検出に大量のデータセットが不要で、
+    十分な点群が取得できれば交線が求めることができる。
+
+    シミュレーションと、実機を用いて精度を評価した。
+    シミュレーション環境では、$0.01mm$のずれ、実機では、$5mm$のずれとなった。
+	\end{abstract}
+	
+	
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	
+	\section{Introduction}
+  近年深刻な問題となってきている少子高齢化により、今後の生産労働人口の激減が予想
+  される。これへの対応措置として、ロボットによる作業代行が挙げられており、
+  溶接作業もその例外ではない。
+
+  ロボットによる自動溶接は、大きく分けてマニピュレーションと、溶接線の検出である、
+  認識の２つの課題があるが、本論文では、溶接線の検出にフォーカスを当てる。
+  
+
+	The goal is to prepare your manuscript for the 2022 International Symposium on Micro-NanoMechatronics and 	Human Science (MHS2022). Manuscripts must be provided
+	in electronic format, with all images embedded. Only PC formatted materials can be accepted (no Mac computer materials), and \textbf{PDF file} is required. To ensure that papers will be reproduced clearly and in proper size and form, authors should observe the following instructions. 
+	
+	\section{Format}
+	The size of the paper should be A4 paper (21.0 cm x 29.7 cm), as already configured on the header of the template.
+	 
+	\subsection{Size of the paper}
+	Set top margin to 43.4 mm (1.7 in), bottom margin to 25.4 mm (1 in), left margin to 18 mm (0.7 in) and right margin to 12 mm (0.47 in). The column width is 88 mm (3.5 in). The space between the two columns is 5 mm (0.2 in).
+	
+	\subsection{Paper Type}
+	Authors can select the paper type between short paper and full paper. Paper type cannot be changed after the notification of acceptance.\\
+	
+	\begin{itemize}	
+	\item Short paper: 1-3 pages. Paper is not uploaded to IEEE Xplore.
+	\item Full paper: 4-6 pages. Paper could be uploaded to IEEE Xplore if the authors want to. 
+	\end{itemize}
+
+	\section{TYPE SIZE AND FONTS}
+	Try to follow the type sizes as below as best you can:\\
+	\begin{table}[hbtp]
+		\caption{size of the font}
+		\label{table:FONTSIZE}
+		\centering
+		\normalsize
+		\begin{tabular}{lrl}
+			Paper Title:&		14 points,& bold\\
+			Authors' Names:&		12 points, &Italic\\
+			Authors' Affiliation:&  	10 points, &regular\\
+			Main Text:&		10 points, &regular\\
+			Or&	 9 points, &regular (optional)\\
+			Section Title:&		10 points, &bold\\
+			Abstract:&		10 points, &bold\\
+			Figure Captions:&	 	 8 points, &regular\\
+			Footnotes:&		 8 points, &regular\\
+		\end{tabular}
+	\end{table}
+
+	
+	The manuscript must use fonts that allow embedding and subsetting (including the base fonts). Failure to embed and subset fonts is the biggest obstacle to PDF compliance with IEEE Xplore.\\
+	
+	\begin{itemize}
+		\item All Type 1 fonts are embeddable.
+		\item Only some TrueType fonts are embeddable.
+		\item Open Type fonts are acceptable as long as they are embedded subset.
+		\item Do not embed fonts in a graphic file.
+	\end{itemize}
+	
+	\section{Graphics}
+	The graphics of the manuscript should have the resolution of 300 dpi or higher. Do not link to some graphic directly to the article outside the manuscript. Insert all of the graphics into the manuscript.
+	
+	\section{Headings}
+	\subsection{Title of your paper and the abstract}
+	Center the title on the page so as to run across the upper portion of the paper. The name of the authors, their affiliation, their address and countries should be also centered using fonts described in the previous section. A brief abstract with one column width should be included as the first paragraph of the paper.\\
+	
+	\subsection{Major Headings and Subheadings}
+	Major headings are centered in the column. Subheadings are placed flash on the left margin of the column on a separate line.\\
+	In the TEX template, \textit{section}, and \textit{subsection} are configured for the indication.
+	
+	\section{Copyright}
+	The accepted full papers shall become the exclusive copy right of the IEEE Robotics and Automation Society and may not be reproduced elsewhere without the Society’s permission.
+	
+	\section{DUE DATE}
+	All authors are strictly required to keep the deadline. Final manuscript and abstract with IEEE Copyright Form should be submitted by July 15, 2022.
+	
+	
+	\addtolength{\textheight}{-12cm}   % This command serves to balance the column lengths
+	% on the last page of the document manually. It shortens
+	% the textheight of the last page by a suitable amount.
+	% This command does not take effect until the next page
+	% so it should come on the page before the last. Make
+	% sure that you do not shorten the textheight too much.
+	
+	%\section*{APPENDIX}
+	
+	
+	
+	\section*{ACKNOWLEDGMENT}
+	Here is the region for the acknowledgment. 
+	
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	
+	The template will number citations consecutively within brackets \cite{c1}. The sentence punctuation follows the bracket \cite{c2}. Refer simply to the reference number, as in \cite{c3}--do not use ``Ref. \cite{c3}" or ``reference \cite{c3}" except at the beginning of a sentence: ``Reference \cite{c3} was the first . . ."
+	
+	
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	
+	\begin{thebibliography}{99}
+		\bibitem{c1} A. B. Author, et al., ``TITLE of the paper, article, proceedings of the conferences," \textit{Abbreviation of the journal name}, Vol, Issue, Page to page, Year
+		\bibitem{c2} A. B. Author, et al., ``TITLE of the paper, article, proceedings of the conferences," \textit{Abbreviation of the journal name}, Vol, Issue, Page to page, Year
+		\bibitem{c3} A. B. Author, et al., ``TITLE of the paper, article, proceedings of the conferences," \textit{Abbreviation of the journal name}, Vol, Issue, Page to page, Year	
+	\end{thebibliography}
+	
+	
+	
+	
+\end{document}
