@@ -148,6 +148,10 @@ Department \& Affiliation, Address (Street, City \& Zip Code), Country\\\\}
   できる。
 
   \section{Experiment And Result}
+  実験はシミュレーションと、実機のそれぞれについて行った。
+  提案手法では、複数視点で点群の波打ちを低減させているが、比較のために、45度の
+  角度から１度の撮影で溶接線を検出した場合も行った。
+  
   \subsection{Experiment Setup}
   本研究ではUFactory製の6DOF robot armであるxArmを使用した(fig)。
   溶接物の撮影には、Realsense d455を使用し、これはArmの手先に取り付けられている。
@@ -160,65 +164,86 @@ Department \& Affiliation, Address (Street, City \& Zip Code), Country\\\\}
   を使用した。
   ロボットアーム、溶接物の配置の関係は(fig)のようである。
 
-  \subsection{Parameter Setting}
+  ロボットの操作のAPIにはROSを使用し、シミュレーション環境には、Gazeboを用いた。
+
+  \subsection{Parameters Setting}
   RANSACでは、推定するのにパラメータを指定しなければならない。本研究では、
   いくつかの試行により、以下のように決めた。
 
-  
-	\subsection{Paper Type}
-	Authors can select the paper type between short paper and full paper. Paper type cannot be changed after the notification of acceptance.\\
-	
-	\begin{itemize}	
-	\item Short paper: 1-3 pages. Paper is not uploaded to IEEE Xplore.
-	\item Full paper: 4-6 pages. Paper could be uploaded to IEEE Xplore if the authors want to. 
-	\end{itemize}
-
-	\section{TYPE SIZE AND FONTS}
-	Try to follow the type sizes as below as best you can:\\
-	\begin{table}[hbtp]
-		\caption{size of the font}
-		\label{table:FONTSIZE}
+  \begin{table}[hbtp]
+		\caption{Parameters Setting}
+		\label{table:ParametersSetting}
 		\centering
 		\normalsize
 		\begin{tabular}{lrl}
-			Paper Title:&		14 points,& bold\\
-			Authors' Names:&		12 points, &Italic\\
-			Authors' Affiliation:&  	10 points, &regular\\
-			Main Text:&		10 points, &regular\\
-			Or&	 9 points, &regular (optional)\\
-			Section Title:&		10 points, &bold\\
-			Abstract:&		10 points, &bold\\
-			Figure Captions:&	 	 8 points, &regular\\
-			Footnotes:&		 8 points, &regular\\
+			$\epsilon_{D}$:&		5000& \\
+			$\epsilon_{K}$:&		0.15& \\
 		\end{tabular}
 	\end{table}
 
+  \subsection{Results and comparison}
+  試行を20回繰り返し、その平均をとった。
+
+  \section{Conclusion}
+  本研究では深度カメラから取得した点群のみを使用して溶接線を導出する処理を提案
+  した。カメラで点群を取得する際、物体に対して垂直になるように別々に
+  撮影するほうが、斜めから単一で撮影するより精度が向上した。
+
+  
+	% \subsection{Paper Type}
+	% Authors can select the paper type between short paper and full paper. Paper type cannot be changed after the notification of acceptance.\\
 	
-	The manuscript must use fonts that allow embedding and subsetting (including the base fonts). Failure to embed and subset fonts is the biggest obstacle to PDF compliance with IEEE Xplore.\\
+	% \begin{itemize}	
+	% \item Short paper: 1-3 pages. Paper is not uploaded to IEEE Xplore.
+	% \item Full paper: 4-6 pages. Paper could be uploaded to IEEE Xplore if the authors want to. 
+	% \end{itemize}
+
+	% \section{TYPE SIZE AND FONTS}
+	% Try to follow the type sizes as below as best you can:\\
+	% \begin{table}[hbtp]
+	% 	\caption{size of the font}
+	% 	\label{table:FONTSIZE}
+	% 	\centering
+	% 	\normalsize
+	% 	\begin{tabular}{lrl}
+	% 		Paper Title:&		14 points,& bold\\
+	% 		Authors' Names:&		12 points, &Italic\\
+	% 		Authors' Affiliation:&  	10 points, &regular\\
+	% 		Main Text:&		10 points, &regular\\
+	% 		Or&	 9 points, &regular (optional)\\
+	% 		Section Title:&		10 points, &bold\\
+	% 		Abstract:&		10 points, &bold\\
+	% 		Figure Captions:&	 	 8 points, &regular\\
+	% 		Footnotes:&		 8 points, &regular\\
+	% 	\end{tabular}
+	% \end{table}
+
 	
-	\begin{itemize}
-		\item All Type 1 fonts are embeddable.
-		\item Only some TrueType fonts are embeddable.
-		\item Open Type fonts are acceptable as long as they are embedded subset.
-		\item Do not embed fonts in a graphic file.
-	\end{itemize}
+	% The manuscript must use fonts that allow embedding and subsetting (including the base fonts). Failure to embed and subset fonts is the biggest obstacle to PDF compliance with IEEE Xplore.\\
 	
-	\section{Graphics}
-	The graphics of the manuscript should have the resolution of 300 dpi or higher. Do not link to some graphic directly to the article outside the manuscript. Insert all of the graphics into the manuscript.
+	% \begin{itemize}
+	% 	\item All Type 1 fonts are embeddable.
+	% 	\item Only some TrueType fonts are embeddable.
+	% 	\item Open Type fonts are acceptable as long as they are embedded subset.
+	% 	\item Do not embed fonts in a graphic file.
+	% \end{itemize}
 	
-	\section{Headings}
-	\subsection{Title of your paper and the abstract}
-	Center the title on the page so as to run across the upper portion of the paper. The name of the authors, their affiliation, their address and countries should be also centered using fonts described in the previous section. A brief abstract with one column width should be included as the first paragraph of the paper.\\
+	% \section{Graphics}
+	% The graphics of the manuscript should have the resolution of 300 dpi or higher. Do not link to some graphic directly to the article outside the manuscript. Insert all of the graphics into the manuscript.
 	
-	\subsection{Major Headings and Subheadings}
-	Major headings are centered in the column. Subheadings are placed flash on the left margin of the column on a separate line.\\
-	In the TEX template, \textit{section}, and \textit{subsection} are configured for the indication.
+	% \section{Headings}
+	% \subsection{Title of your paper and the abstract}
+	% Center the title on the page so as to run across the upper portion of the paper. The name of the authors, their affiliation, their address and countries should be also centered using fonts described in the previous section. A brief abstract with one column width should be included as the first paragraph of the paper.\\
 	
-	\section{Copyright}
-	The accepted full papers shall become the exclusive copy right of the IEEE Robotics and Automation Society and may not be reproduced elsewhere without the Society’s permission.
+	% \subsection{Major Headings and Subheadings}
+	% Major headings are centered in the column. Subheadings are placed flash on the left margin of the column on a separate line.\\
+	% In the TEX template, \textit{section}, and \textit{subsection} are configured for the indication.
 	
-	\section{DUE DATE}
-	All authors are strictly required to keep the deadline. Final manuscript and abstract with IEEE Copyright Form should be submitted by July 15, 2022.
+	% \section{Copyright}
+	% The accepted full papers shall become the exclusive copy right of the IEEE Robotics and Automation Society and may not be reproduced elsewhere without the Society’s permission.
+	
+	% \section{DUE DATE}
+	% All authors are strictly required to keep the deadline. Final manuscript and abstract with IEEE Copyright Form should be submitted by July 15, 2022.
 	
 	
 	\addtolength{\textheight}{-12cm}   % This command serves to balance the column lengths
@@ -233,7 +258,8 @@ Department \& Affiliation, Address (Street, City \& Zip Code), Country\\\\}
 	
 	
 	\section*{ACKNOWLEDGMENT}
-	Here is the region for the acknowledgment. 
+  甚深微妙なる叡智のもと、一切の苦厄を度されただけでなく、
+  大変丁寧なご指導をくださった辻岡哲夫准教授に熱く御礼申し上げます。
 	
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	
