@@ -83,23 +83,88 @@ Department \& Affiliation, Address (Street, City \& Zip Code), Country\\\\}
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	
 	\section{Introduction}
-  近年深刻な問題となってきている少子高齢化により、今後の生産労働人口の激減が予想
+  近年の深刻な社会問題である少子高齢化により、今後の生産労働人口の激減が予想
   される。これへの対応措置として、ロボットによる作業代行が挙げられており、
   溶接作業もその例外ではない。
 
   ロボットによる自動溶接は、大きく分けてマニピュレーションと、溶接線の検出である、
-  認識の２つの課題があるが、本論文では、溶接線の検出にフォーカスを当てる。
+  認識の２つの課題があるが、本論文では、溶接線の検出について述べる。
+
+  本稿で想定している溶接とは、アーク溶接などの融接を考えている。
+  これは、(fig)に示されているような手先に溶接機が取り付けられているロボットを使用して溶接
+  するためである。そして、突き合わせ溶接などの、平面を水平に溶接する場合は、
+  カメラによる溶接線の検出が難しいが、母材が互いに垂直に配置されている
+  隅肉溶接なら物体の形状を把握しやすい。
+  そこで、本稿では数ある溶接物の形状の中でも、
+  円柱と平面を隅肉溶接する処理を取り上げ、溶接線を検出する手法を提案する。
+
+  
+  （他の溶接に関する研究を書く）
+
+	
+	\section{Problem Statement}
+  本稿では隅肉溶接のアーク溶接をする上での溶接線の検出を考えている。
+  したがって、溶接線は形状が異なる2物体のが交差してできる交線であると考えられる。
+
+  今回は、円柱と平面を隅肉溶接することを考えているので、解決すべき課題は、
+  \begin{quote}
+    \begin{itemize}
+      \item 深度カメラによる円柱と平面の推定
+      \item 円柱と平面の交線の導出処理
+    \end{itemize}
+  \end{quote}
+  の2つとなる。
   
 
-	The goal is to prepare your manuscript for the 2022 International Symposium on Micro-NanoMechatronics and 	Human Science (MHS2022). Manuscripts must be provided
-	in electronic format, with all images embedded. Only PC formatted materials can be accepted (no Mac computer materials), and \textbf{PDF file} is required. To ensure that papers will be reproduced clearly and in proper size and form, authors should observe the following instructions. 
-	
-	\section{Format}
-	The size of the paper should be A4 paper (21.0 cm x 29.7 cm), as already configured on the header of the template.
+	\section{Proposed Method}
+  本研究の処理の流れは、(fig)に示す。処理は3ステップで行われる。
+
+  まず、物体の撮影を行う。ノイズが少なくなるように撮影姿勢を工夫した。
+  次に、外れ値をうまく除去しつつ、点群に含まれる円柱と平面の推定を行う。
+  最後に、推定された円柱と平面から交線を導出する。
+
+  続くsubsectionで、各処理の詳細を述べる。
+  
+
+  \subsection{溶接物の撮影}
+  シミュレーション環境では撮影姿勢がいかなるものでも、
+  ノイズが少ない点群が得られるが、実際の環境では、撮影姿勢、撮影対象により
+  波打ちや穴あきなどのノイズが多いデータになることがある(fig)。
+
+  しかし、物体に対し垂直に撮影することで、いくらかはその波打ちを低減させることが
+  できる(fig)。
+  そこで、本研究では円柱と平面をできるだけきれいに撮影するため、円柱と平面を
+  別々に撮影した。
+  
 	 
-	\subsection{Size of the paper}
-	Set top margin to 43.4 mm (1.7 in), bottom margin to 25.4 mm (1 in), left margin to 18 mm (0.7 in) and right margin to 12 mm (0.47 in). The column width is 88 mm (3.5 in). The space between the two columns is 5 mm (0.2 in).
+	\subsection{円柱と平面の推定処理}
+  深度カメラから送られてきた点群に対し、円柱と平面を推定する。
+  本研究では、Random Sample Consensus(RANSAC)を使用して推定した。
+  このアルゴリズムは、外れ値を含むデータを使っていても、それらを除去し、
+  点群にフィットする円柱や平面などのモデルをうまく推定することができる。
+
+  \subsection{溶接線の計算処理}
+  円柱と平面の数学的パラメータが求まったら、あとは解析的に交線を求めることが
+  できる。
+
+  \section{Experiment And Result}
+  \subsection{Experiment Setup}
+  本研究ではUFactory製の6DOF robot armであるxArmを使用した(fig)。
+  溶接物の撮影には、Realsense d455を使用し、これはArmの手先に取り付けられている。
+  また、手先にはさらに溶接のためのトーチが取り付けられ、アーク溶接などを実行
+  する際には、手先に高い正の電圧を、母材には負の電圧をかけ、アーク放電を発生させる。
+  ここで、本研究では溶接線の検出がメインであるので、溶接作業のマニピュレーション
+  までは行わない。
 	
+  実験に使用したモデルは(fig)のような黒革の平面上に円柱が垂直に立てられたモデル
+  を使用した。
+  ロボットアーム、溶接物の配置の関係は(fig)のようである。
+
+  \subsection{Parameter Setting}
+  RANSACでは、推定するのにパラメータを指定しなければならない。本研究では、
+  いくつかの試行により、以下のように決めた。
+
+  
 	\subsection{Paper Type}
 	Authors can select the paper type between short paper and full paper. Paper type cannot be changed after the notification of acceptance.\\
 	
