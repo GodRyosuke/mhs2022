@@ -4,7 +4,7 @@
 
 %\documentclass[letterpaper, 10 pt, conference]{mhs}  % Comment this line out if you need a4paper
 
-\documentclass[a4paper, 10pt, conference]{mhs}      % Use this line for a4 paper
+\documentclass[a4paper, 10pt, conference, dvipdfmx]{mhs}      % Use this line for a4 paper
 
 \IEEEoverridecommandlockouts                              % This command is only needed if 
 % you want to use the \thanks command
@@ -28,6 +28,7 @@
 
 % The following packages can be found on http:\\www.ctan.org
 \usepackage{graphics} % for pdf, bitmapped graphics files
+\usepackage[dvipdfmx]{graphicx}
 \usepackage{epsfig} % for postscript graphics files
 \usepackage{mathptmx} % assumes new font selection scheme installed
 \usepackage{times} % assumes new font selection scheme installed
@@ -36,6 +37,10 @@
 \usepackage{here}
 \usepackage{threeparttable}
 \usepackage{caption}
+\usepackage{cleveref}
+
+\crefname{figure}{Fig}{Fig}
+
 
 \captionsetup[table]{labelsep=period, labelfont=bf, justification=raggedright, singlelinecheck=off}
 %\usepackage{titlesec}
@@ -43,20 +48,26 @@
 %\titleformat*{\section}{\sc \bfseries \centering}
 %\titleformat*{\subsection}{\sc \bfseries}
 
-\title{\Large \bf
-Preparation of Papers for MHS 2022\\
-\large33rd 2022 International Symposium on Micro-NanoMechatronics and Human Science\\
-(From Micro \& Nano Scale Systems to Robotics \& Mechatronics Systems)\\
-Symposium on ``Science of Soft Robots"\\
-Grant-in-Aid for Scientific Research on Innovative Areas, MEXT, Japan\\
-Symposium on ``HYPER-ADAPTABILITY"\\
-Grant-in-Aid for Scientific Research on Innovative Areas, MEXT, Japan
-}
+% \title{\Large \bf
+% Preparation of Papers for MHS 2022\\
+% \large33rd 2022 International Symposium on Micro-NanoMechatronics and Human Science\\
+% (From Micro \& Nano Scale Systems to Robotics \& Mechatronics Systems)\\
+% Symposium on ``Science of Soft Robots"\\
+% Grant-in-Aid for Scientific Research on Innovative Areas, MEXT, Japan\\
+% Symposium on ``HYPER-ADAPTABILITY"\\
+% Grant-in-Aid for Scientific Research on Innovative Areas, MEXT, Japan
+% }
 
+\title{
+  3D Point Cloudのみを使用した円柱と平面の交線導出
+}
 
 \author{All Author$^{1}$ and Researcher$^{2}$\\% <-this % stops a space
 Department \& Affiliation, Address (Street, City \& Zip Code), Country\\\\}
-
+\author{
+  Tomohito Takubo, Hiroshi Shimamoto, Ryosuke Kusumoto, and Tetsuo Tsujioka \\
+  Osaka Metropolitan University
+}
 
 \begin{document}
 	
@@ -76,7 +87,7 @@ Department \& Affiliation, Address (Street, City \& Zip Code), Country\\\\}
     十分な点群が取得できれば交線が求めることができる。
 
     シミュレーションと、実機を用いて精度を評価した。
-    シミュレーション環境では、$0.01mm$のずれ、実機では、$5mm$のずれとなった。
+    シミュレーション環境では、$1mm$のずれ、実機では、$15mm$のずれとなった。
 	\end{abstract}
 	
 	
@@ -91,8 +102,9 @@ Department \& Affiliation, Address (Street, City \& Zip Code), Country\\\\}
   認識の２つの課題があるが、本論文では、溶接線の検出について述べる。
 
   本稿で想定している溶接とは、アーク溶接などの融接を考えている。
-  これは、(fig)に示されているような手先に溶接機が取り付けられているロボットを使用して溶接
-  するためである。そして、突き合わせ溶接などの、平面を水平に溶接する場合は、
+  これは、ロボットアームの手先に溶接機を取り付け、溶接線をなぞることにより、
+  実現できる。
+  また、突き合わせ溶接などの、平面を水平に溶接する場合は、
   カメラによる溶接線の検出が難しいが、母材が互いに垂直に配置されている
   隅肉溶接なら物体の形状を把握しやすい。
   そこで、本稿では数ある溶接物の形状の中でも、
@@ -117,31 +129,60 @@ Department \& Affiliation, Address (Street, City \& Zip Code), Country\\\\}
   
 
 	\section{Proposed Method}
-  本研究の処理の流れは、(fig)に示す。処理は3ステップで行われる。
+  本研究の処理の流れは、\cref{fig:detection_process}に示す。処理は3ステップで行われる。
 
   まず、物体の撮影を行う。ノイズが少なくなるように撮影姿勢を工夫した。
   次に、外れ値をうまく除去しつつ、点群に含まれる円柱と平面の推定を行う。
   最後に、推定された円柱と平面から交線を導出する。
 
   続くsubsectionで、各処理の詳細を述べる。
+
+
+
+\begin{figure}[htbp]
+  \begin{center}
+  \includegraphics[width=70mm]{./fig/difference.png}
+  \caption{The process of detection}
+  \label{fig:detection_process}
+  \end{center}
+\end{figure}
   
 
   \subsection{溶接物の撮影}
   シミュレーション環境では撮影姿勢がいかなるものでも、
   ノイズが少ない点群が得られるが、実際の環境では、撮影姿勢、撮影対象により
-  波打ちや穴あきなどのノイズが多いデータになることがある(fig)。
+  波打ちや穴あきなどのノイズが多いデータになることがある。
+  
 
   しかし、物体に対し垂直に撮影することで、いくらかはその波打ちを低減させることが
-  できる(fig)。
-  そこで、本研究では円柱と平面をできるだけきれいに撮影するため、円柱と平面を
-  別々に撮影した。
+  できる。\cref{fig:difference_picture_pos}にその違いを示す。
+  左は垂直面と水平面を別々に撮影して取得した画像、右は斜めから単一で撮影した画像
+  である。図から明らかなように、単一で撮影した場合は形状がほとんどわからないのに
+  対し、複数視点で撮影すれば、平面に垂直に立っている円柱の形状が現れているのが
+  わかる。
+
+
+  \begin{figure}[htbp]
+    \begin{center}
+    \includegraphics[width=70mm]{./fig/difference_picture_pos.png}
+    \caption{The difference of depth data quality}
+    \label{fig:difference_picture_pos}
+    \end{center}
+  \end{figure}
   
 	 
 	\subsection{円柱と平面の推定処理}
   深度カメラから送られてきた点群に対し、円柱と平面を推定する。
   本研究では、Random Sample Consensus(RANSAC)を使用して推定した。
-  このアルゴリズムは、外れ値を含むデータを使っていても、それらを除去し、
+
+  まず、処理を適用する前に、点群のDown Samplingを行う。
+  これは点が入る密度を決定するVoxel size $L_{voxel}$四方の立方体で点群を
+  分割する。
+
+  平面と円柱を求めるRANSACでは、外れ値を含むデータを使っていても、それらを除去し、
   点群にフィットする円柱や平面などのモデルをうまく推定することができる。
+
+
 
   \subsection{溶接線の計算処理}
   円柱と平面の数学的パラメータが求まったら、あとは解析的に交線を求めることが
@@ -153,19 +194,37 @@ Department \& Affiliation, Address (Street, City \& Zip Code), Country\\\\}
   角度から１度の撮影で溶接線を検出した場合も行った。
   
   \subsection{Experiment Setup}
-  本研究ではUFactory製の6DOF robot armであるxArmを使用した(fig)。
+  本研究ではUFactory製の6DOF robot armであるxArmを使用した(\cref{fig:hardware_setup})。
   溶接物の撮影には、Realsense d455を使用し、これはArmの手先に取り付けられている。
   また、手先にはさらに溶接のためのトーチが取り付けられ、アーク溶接などを実行
   する際には、手先に高い正の電圧を、母材には負の電圧をかけ、アーク放電を発生させる。
   ここで、本研究では溶接線の検出がメインであるので、溶接作業のマニピュレーション
   までは行わない。
 	
-  実験に使用したモデルは(fig)のような黒革の平面上に円柱が垂直に立てられたモデル
+  実験に使用したモデルは黒革の平面上に円柱が垂直に立てられたモデル
   を使用した。
-  ロボットアーム、溶接物の配置の関係は(fig)のようである。
+  ロボットアーム、溶接物の配置の関係は(\cref{fig:weld_pos})のようである。
 
   ロボットの操作のAPIにはROSを使用し、シミュレーション環境には、Gazeboを用いた。
 
+
+  \begin{figure}[htbp]
+    \begin{center}
+    \includegraphics[width=70mm]{./fig/hardware_setup.png}
+    \caption{hardware setup}
+    \label{fig:hardware_setup}
+    \end{center}
+  \end{figure}
+
+  \begin{figure}[htbp]
+    \begin{center}
+    \includegraphics[width=70mm]{./fig/weld_pos.png}
+    \caption{The position of robot and weld object}
+    \label{fig:weld_pos}
+    \end{center}
+  \end{figure}
+
+  
   \subsection{Parameters Setting}
   RANSACでは、推定するのにパラメータを指定しなければならない。本研究では、
   いくつかの試行により、以下のように決めた。
@@ -263,7 +322,7 @@ Department \& Affiliation, Address (Street, City \& Zip Code), Country\\\\}
 	
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	
-	The template will number citations consecutively within brackets \cite{c1}. The sentence punctuation follows the bracket \cite{c2}. Refer simply to the reference number, as in \cite{c3}--do not use ``Ref. \cite{c3}" or ``reference \cite{c3}" except at the beginning of a sentence: ``Reference \cite{c3} was the first . . ."
+	% The template will number citations consecutively within brackets \cite{c1}. The sentence punctuation follows the bracket \cite{c2}. Refer simply to the reference number, as in \cite{c3}--do not use ``Ref. \cite{c3}" or ``reference \cite{c3}" except at the beginning of a sentence: ``Reference \cite{c3} was the first . . ."
 	
 	
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
