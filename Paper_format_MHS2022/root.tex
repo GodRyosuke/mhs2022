@@ -29,6 +29,7 @@
 % The following packages can be found on http:\\www.ctan.org
 \usepackage{graphics} % for pdf, bitmapped graphics files
 \usepackage[dvipdfmx]{graphicx}
+\usepackage{bm}
 \usepackage{epsfig} % for postscript graphics files
 \usepackage{mathptmx} % assumes new font selection scheme installed
 \usepackage{times} % assumes new font selection scheme installed
@@ -40,6 +41,7 @@
 \usepackage{cleveref}
 
 \crefname{figure}{Fig}{Fig}
+\crefname{table}{Table}{Table}
 
 
 \captionsetup[table]{labelsep=period, labelfont=bf, justification=raggedright, singlelinecheck=off}
@@ -110,7 +112,21 @@ Department \& Affiliation, Address (Street, City \& Zip Code), Country\\\\}
   そこで、本稿では数ある溶接物の形状の中でも、
   円柱と平面を隅肉溶接する処理を取り上げ、溶接線を検出する手法を提案する。
 
+  近年の溶接に関する研究の動向は、Xuewuらが調査している\cite{survey_welding}。
   
+  溶接物の材質にはさまざまな種類があるが、多くの場合、白や黒が多い。そのため、
+  物体の検出に色の特徴量を使うのが困難であり、出力結果がロバストにならない。
+  
+  その点において、色の特徴量が少ない物体の3D Reconstructionのために、Shape
+  from shading(SFS)を活用している研究がある\cite{welding_quality}。これは、この手法を用いて
+  アーク溶接された溶接線を3D 復元し、溶接がどれだけ上手く行われたか、
+  すなわち溶接線の質を評価しようとしたものである。
+
+  Chenらは、検出した溶接線について、どこから溶接を開始するのかを決定する、
+  溶接開始点の推定問題(SWE)への解法を提案している\cite{detect_welding_start_point}。
+  縫い目状の溶接線とwork pieceの境界に対して、最小二乗法による関数
+  のフィッティングをし、その関数の交点から溶接開始点を導出している。
+
   （他の溶接に関する研究を書く）
 
 	
@@ -134,6 +150,9 @@ Department \& Affiliation, Address (Street, City \& Zip Code), Country\\\\}
   まず、物体の撮影を行う。ノイズが少なくなるように撮影姿勢を工夫した。
   次に、外れ値をうまく除去しつつ、点群に含まれる円柱と平面の推定を行う。
   最後に、推定された円柱と平面から交線を導出する。
+
+  この処理の流れから分かるように、この処理では機械学習を用いていない。
+  したがって、大量のデータセットを準備したり、高性能なGPUが不要な処理になっている。
 
   続くsubsectionで、各処理の詳細を述べる。
 
@@ -173,7 +192,7 @@ Department \& Affiliation, Address (Street, City \& Zip Code), Country\\\\}
 	 
 	\subsection{円柱と平面の推定処理}
   深度カメラから送られてきた点群に対し、円柱と平面を推定する。
-  本研究では、Random Sample Consensus(RANSAC)を使用して推定した。
+  本研究では、Random Sample Consensus(RANSAC)を使用して推定した\cite{ransac}。
 
   まず、処理を適用する前に、点群のDown Samplingを行う。
   これは点が入る密度を決定するVoxel size $L_{voxel}$四方の立方体で点群を
@@ -181,12 +200,50 @@ Department \& Affiliation, Address (Street, City \& Zip Code), Country\\\\}
 
   平面と円柱を求めるRANSACでは、外れ値を含むデータを使っていても、それらを除去し、
   点群にフィットする円柱や平面などのモデルをうまく推定することができる。
-
+  使用者は平面、円柱の推定の試行回数$N$、容認する誤差の範囲である閾値$\epsilon$
+  を指定する。$N$が大きいと時間はかかるが、解を見つける可能性は上がり、$\epsilon$は
+  小さいほどより点群に厳密にフィットする平面、円柱を探せるが、解が得られない
+  可能性も上がる。これらのトレードオフを考慮し、パラメータの値を決定しなければ
+  ならない。
 
 
   \subsection{溶接線の計算処理}
+  RANSACで出力されるのは、平面、円柱を特定するためのパラメータである。
+  平面は法線ベクトル$\bm{n}$と定数$k$が出力され、以下のような関係にある。
+  \begin{align}
+    \bm{x}\cdot \bm{n} + k = 0
+  \end{align}
+  円柱は、中心軸の方向ベクトル$d$と通る１点$a$、そしてその半径$r$が出力される。
+  ただし、中心軸は
+  \begin{align}
+    \bm{x} = t\bm{d} + \bm{a} 
+  \end{align}
+  という関係にある。
   円柱と平面の数学的パラメータが求まったら、あとは解析的に交線を求めることが
   できる。
+
+  まず、平面と円柱の中心軸の交点$\bm{r_{h}}$を求める。
+  \begin{align}
+    \bm{r_{h}} = -\frac{k + \bm{a}\cdot \bm{n}}{\bm{d}\cdot \bm{n}} \bm{d} + \bm{a}
+  \end{align}
+  次に、中心軸とロボット座標系のz軸(鉛直方向の軸)との成す角$\theta_{c}$を求める。
+  \begin{align}
+    \theta_{c} = cos^{-1}\frac{\bm{d}\cdot \bm{e_{z}}}{||\bm{d}|| ||\bm{e_{z}}||}
+  \end{align}
+  $\bm{r}$を軸とし$\theta$回転する回転行列を$R(\bm{r}, \theta)$として、以下の回転行列
+  $R_{c}$を計算する
+  \begin{align}
+    R_{c} = (normalize(\bm{d} \times \bm{e_{z}}), -\theta_{c})
+  \end{align}
+  $\bm{r}$だけ平行移動する行列$T(\bm{r})$を定義し、以下の変換行列$A$を求める。
+  \begin{align}
+    A = T(-\bm{r_{h}}) R_{c}
+  \end{align}
+  すると、交線となる円の点群$P_{c}$と$\bm{p_{i}} \in P_{c}$は、
+  \begin{align}
+    \bm{\bar{p}_{i}} &= cos \theta_{i} \bm{e_{x}} + sin \theta_{i} \bm{e_{y}} \\
+    \bm{p_{i}} &= A^{-1} \bm{\bar{p}_{i}} 
+  \end{align}
 
   \section{Experiment And Result}
   実験はシミュレーションと、実機のそれぞれについて行った。
@@ -227,25 +284,71 @@ Department \& Affiliation, Address (Street, City \& Zip Code), Country\\\\}
   
   \subsection{Parameters Setting}
   RANSACでは、推定するのにパラメータを指定しなければならない。本研究では、
-  いくつかの試行により、以下のように決めた。
+  いくつかの試行を行った結果、\cref{table:ParametersSetting}のように定めた。
 
   \begin{table}[hbtp]
 		\caption{Parameters Setting}
 		\label{table:ParametersSetting}
 		\centering
 		\normalsize
-		\begin{tabular}{lrl}
-			$\epsilon_{D}$:&		5000& \\
-			$\epsilon_{K}$:&		0.15& \\
+		\begin{tabular}{cll}
+      \hline
+      parameter name & value  \\
+      \hline 
+      \hline
+      $L_{voxel}$ & 0.002 \\
+      $N$ & 1000 \\
+      $\epsilon$ & 0.001 \\
+      \hline
 		\end{tabular}
 	\end{table}
 
   \subsection{Results and comparison}
-  試行を20回繰り返し、その平均をとった。
+  試行を15回繰り返し、その平均をとった。
+  その結果を\cref{table:experiment_result}に示す。
+  ただし、Value 1は円柱の中心軸と平面との交点の真値とのずれ、
+  Value 2は円柱の半径の真値とのずれ、Value 3は円柱の中心軸とロボット座標系
+  のz軸との成す角である。すべて0であれば良く、Value 3は円柱が垂直に立っている
+  ことをどれだけ精度良く検出できているかを表している。
+
+  シミュレーション結果では、誤差はほとんど見られなかった。
+  実機においては、単一視点より複数視点視点で点群を取得するほうが
+  結果がよくなっている。これはやはり取得する点群の波打ち、穴あきが減少したために、
+  RANSACによる円柱と平面の推定の精度が向上したためであると考えられる。
+  シミュレーション結果での高精度からも、カメラから得られる点群の精度が大きく
+  結果に影響を与えることが分かる。
+
+  
+\begin{table}[hbtp]
+  \caption{Experiment Result(deviation of  the true value)}
+  \label{table:experiment_result}
+  \centering
+  \normalsize
+  \begin{tabular}{cccc}
+    \hline
+    type &  Value 1[m] & Value 2[m] & Value 3[deg] \\
+    \hline 
+    \hline
+    simulation & $6.74\times 10^{-5}$ & $1.11\times 10^{-5}$ & $9.96\times 10^{-3}$ \\
+    単一視点 & 0.001 & 0.050 & 0.00 \\
+    複数視点 & 0.001 & 0.050 & 0.00 \\
+    \hline
+  \end{tabular}
+\end{table}
 
   \section{Conclusion}
   本研究では深度カメラから取得した点群のみを使用して溶接線を導出する処理を提案
-  した。カメラで点群を取得する際、物体に対して垂直になるように別々に
+  した。この処理では、機械学習を用いていないので、高性能なGPUや大量のデータセット
+  が不要であった。
+  
+  実験では、シミュレーションと現実環境の２種類で行い、現実環境では点群の取得
+  方法を単一視点と複数視点の２つの方法で行った。結果は、シミュレーション環境では
+  誤差はほとんど見られなかったが、実機では良くて$15mm$の誤差となった。
+  実際に溶接作業で使うにはさらに精度を上げる必要がある。実験結果からわかったように、
+  点群の精度が結果の良さに影響するため、カメラの性能が上がれば結果の精度も向上
+  すると考えられる。
+
+  また、カメラで点群を取得する際、物体に対して垂直になるように別々に
   撮影するほうが、斜めから単一で撮影するより精度が向上した。
 
   
@@ -328,9 +431,26 @@ Department \& Affiliation, Address (Street, City \& Zip Code), Country\\\\}
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	
 	\begin{thebibliography}{99}
-		\bibitem{c1} A. B. Author, et al., ``TITLE of the paper, article, proceedings of the conferences," \textit{Abbreviation of the journal name}, Vol, Issue, Page to page, Year
-		\bibitem{c2} A. B. Author, et al., ``TITLE of the paper, article, proceedings of the conferences," \textit{Abbreviation of the journal name}, Vol, Issue, Page to page, Year
-		\bibitem{c3} A. B. Author, et al., ``TITLE of the paper, article, proceedings of the conferences," \textit{Abbreviation of the journal name}, Vol, Issue, Page to page, Year	
+    \bibitem{survey_welding}
+    Xuewu Wang, Xin Zhou, Zelong Xia and, Xingsheng Gu, "A survey of welding robot
+    intelligent path optimization," Journal of Manufacturing Prcoess, 63, 14-23, 2021.
+
+    \bibitem{welding_quality}
+    Lei Yang, En Li, Teng Long, Junfeng Fan Yijian Mao, Zaojun Fang, and Zize Liang, 
+    "A welding quality detection method for arc welding robot based on 3D reconstruction
+    with SFS algorithm," Int J Adv Manuf Technol (2018) 94:1209-1220
+
+    \bibitem{detect_welding_start_point}
+    X.Z. Chen, "The autonomous detection and guiding of start welding position for
+      arc welding robot," Industrial Robot: An International Journal 37/1 (2010) 70-78
+
+    \bibitem{ransac}
+    A. M. Fischler and C. R. Bolles, “Random Sample Consensus: A Paradigm for Model Fitting 
+    with Applications to Image Analysis and Automated Cartography,” Communications
+    of the ACM, Vol. 24, No.6, pp. 381–395, 1981.
+
+
+
 	\end{thebibliography}
 	
 	
