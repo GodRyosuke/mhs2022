@@ -61,7 +61,7 @@
 % }
 
 \title{
-  3D Point Cloudのみを使用した円柱と平面の交線導出
+  Intersection extraction of cylinders and planes for weld line detection using point cloud data
 }
 
 \author{All Author$^{1}$ and Researcher$^{2}$\\% <-this % stops a space
@@ -88,17 +88,20 @@ Department \& Affiliation, Address (Street, City \& Zip Code), Country\\\\}
     この処理では、機械学習を使っていないので、検出に大量のデータセットが不要で、
     十分な点群が取得できれば交線が求めることができる。
 
-    シミュレーションと、実機を用いて精度を評価した。
-    シミュレーション環境では、$1mm$のずれ、実機では、$15mm$のずれとなった。
+    本研究では、質の良い点群を取得するために、一つの撮影視点で点群を取得するのと、
+    複数の撮影視点で、物体に対し垂直に撮影する２つの手法を比較した。
+    複数の撮影視点で点群を取得したほうが、穴あきなどが少なく、真値とのズレは、
+    それぞれ$28mm$、$12mm$となり、複数の撮影視点で点群を取得したほうが良い結果
+    が得られることがわかった。
 	\end{abstract}
 	
 	
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	
 	\section{Introduction}
-  近年の深刻な社会問題である少子高齢化により、今後の生産労働人口の激減が予想
-  される。これへの対応措置として、ロボットによる作業代行が挙げられており、
-  溶接作業もその例外ではない。
+  % 近年の深刻な社会問題である少子高齢化により、今後の生産労働人口の激減が予想
+  % される。これへの対応措置として、ロボットによる作業代行が挙げられており、
+  % 溶接作業もその例外ではない。
 
   ロボットによる自動溶接は、大きく分けてマニピュレーションと、溶接線の検出である、
   認識の２つの課題があるが、本論文では、溶接線の検出について述べる。
@@ -137,7 +140,7 @@ Department \& Affiliation, Address (Street, City \& Zip Code), Country\\\\}
   今回は、円柱と平面を隅肉溶接することを考えているので、解決すべき課題は、
   \begin{quote}
     \begin{itemize}
-      \item 深度カメラによる円柱と平面の推定
+      \item 深度カメラによる円柱と平面の位置姿勢の推定
       \item 円柱と平面の交線の導出処理
     \end{itemize}
   \end{quote}
@@ -147,8 +150,10 @@ Department \& Affiliation, Address (Street, City \& Zip Code), Country\\\\}
 	\section{Proposed Method}
   本研究の処理の流れは、\cref{fig:detection_process}に示す。処理は3ステップで行われる。
 
-  まず、物体の撮影を行う。ノイズが少なくなるように撮影姿勢を工夫した。
-  次に、外れ値をうまく除去しつつ、点群に含まれる円柱と平面の推定を行う。
+  まず、物体の撮影を行う。
+  溶接物は黒色で反射もあり、深度カメラで形状をきれいに認識するのは容易ではない。
+  そこで、物体の各面に対して垂直に撮影することで、ノイズを軽減させた。
+  次に、点群に含まれる円柱と平面の推定を行う。
   最後に、推定された円柱と平面から交線を導出する。
 
   この処理の流れから分かるように、この処理では機械学習を用いていない。
@@ -160,7 +165,7 @@ Department \& Affiliation, Address (Street, City \& Zip Code), Country\\\\}
 
 \begin{figure}[htbp]
   \begin{center}
-  \includegraphics[width=70mm]{./fig/difference.png}
+  \includegraphics[width=90mm]{./fig/detection_flow.png}
   \caption{The process of detection}
   \label{fig:detection_process}
   \end{center}
@@ -168,17 +173,13 @@ Department \& Affiliation, Address (Street, City \& Zip Code), Country\\\\}
   
 
   \subsection{溶接物の撮影}
-  シミュレーション環境では撮影姿勢がいかなるものでも、
-  ノイズが少ない点群が得られるが、実際の環境では、撮影姿勢、撮影対象により
-  波打ちや穴あきなどのノイズが多いデータになることがある。
-  
+  円柱の溶接物に対し、斜めから単一視点で撮影すると、(fig)のように穴あきや波打ち
+  が激しくなってしまう。
+  そこで、物体に対して垂直にカメラが向くように物体を撮影した(fig)。
+  図から明らかなように、物体の形状をきれいに取り出せていることがわかる。
+  この方法では、1回の撮影で物体の全体を捉えることが難しいので、撮影点を
+  垂直方向と水平方向の2種類に分けて撮影を行った。
 
-  しかし、物体に対し垂直に撮影することで、いくらかはその波打ちを低減させることが
-  できる。\cref{fig:difference_picture_pos}にその違いを示す。
-  左は垂直面と水平面を別々に撮影して取得した画像、右は斜めから単一で撮影した画像
-  である。図から明らかなように、単一で撮影した場合は形状がほとんどわからないのに
-  対し、複数視点で撮影すれば、平面に垂直に立っている円柱の形状が現れているのが
-  わかる。
 
 
   \begin{figure}[htbp]
@@ -208,49 +209,115 @@ Department \& Affiliation, Address (Street, City \& Zip Code), Country\\\\}
 
 
   \subsection{溶接線の計算処理}
-  RANSACで出力されるのは、平面、円柱を特定するためのパラメータである。
-  平面は法線ベクトル$\bm{n}$と定数$k$が出力され、以下のような関係にある。
-  \begin{align}
-    \bm{x}\cdot \bm{n} + k = 0
-  \end{align}
-  円柱は、中心軸の方向ベクトル$d$と通る１点$a$、そしてその半径$r$が出力される。
-  ただし、中心軸は
-  \begin{align}
-    \bm{x} = t\bm{d} + \bm{a} 
-  \end{align}
-  という関係にある。
-  円柱と平面の数学的パラメータが求まったら、あとは解析的に交線を求めることが
-  できる。
+  RANSACにより、平面と円柱を推定すると、平面では法線ベクトル$\bm{n}$と通る1点$\bm{b}$、
+  円柱ではその中心軸と半径$r$が出力される。中心軸は方向ベクトル$d$と通る1点$a$
+  からなるとする。各パラメーターは\cref{fig:weld_pos}のようなロボット座標系に従うとする。
+  各パラメーターの関係は\cref{fig:math_fig}のようになる。
+  円柱の中心軸と平面との交点を$\bm{r_{h}}$は以下の式で表される。
+  % とすると、以下の関係が導かれる。
+  % \begin{align}
+  %   k = -\bm{n}\cdot \bm{b} \\
+  %   \bm{r_{h}}\cdot \bm{n} + k = 0
+  % \end{align}
+  % 円柱は、中心軸の方向ベクトル$\bm{d}$と通る１点$\bm{a}$、そしてその半径$r$が出力される。
+  % ただし、中心軸は
+  % \begin{align}
+  %   \bm{x} = t\bm{d} + \bm{a} 
+  % \end{align}
+  % という関係にある。
+  % 円柱と平面の数学的パラメータが求まれば、あとは解析的に交線を求めることが
+  % できる。
 
-  まず、平面と円柱の中心軸の交点$\bm{r_{h}}$を求める。
+  % まず、平面と円柱の中心軸の交点$\bm{r_{h}}$を求める。
   \begin{align}
-    \bm{r_{h}} = -\frac{k + \bm{a}\cdot \bm{n}}{\bm{d}\cdot \bm{n}} \bm{d} + \bm{a}
+    \bm{r_{h}} = -\frac{-\bm{n}\cdot \bm{b} + \bm{a}\cdot \bm{n}}{\bm{d}\cdot \bm{n}} \bm{d} + \bm{a}
   \end{align}
   次に、中心軸とロボット座標系のz軸(鉛直方向の軸)との成す角$\theta_{c}$を求める。
+  $\bm{e_{x}}, \bm{e_{y}}, \bm{e_{z}}$をそれぞれロボット座標系のx軸、y軸、z軸を
+  表すとする。
   \begin{align}
-    \theta_{c} = cos^{-1}\frac{\bm{d}\cdot \bm{e_{z}}}{||\bm{d}|| ||\bm{e_{z}}||}
+    \bm{e_{z}} = \left(\begin{matrix}
+      0, 0, 1
+    \end{matrix} \right)^{t}  \\
+    \theta_{c} = cos^{-1}\frac{\bm{d}\cdot \bm{e_{z}}}{\parallel\bm{d}\parallel \parallel\bm{e_{z}}\parallel}
   \end{align}
-  $\bm{r}$を軸とし$\theta$回転する回転行列を$R(\bm{r}, \theta)$として、以下の回転行列
-  $R_{c}$を計算する
+  次に、クォータニオン$\hat{\bm{q}}$を以下のように定義する。
   \begin{align}
-    R_{c} = (normalize(\bm{d} \times \bm{e_{z}}), -\theta_{c})
+    \bm{r_{axis}} = \frac{\bm{d} \times \bm{e_{z}}}{\parallel \bm{d} \times \bm{e_{z}} \parallel} \\
+    \bm{r_{axis}} = \left(r_{axis}^{x}, r_{axis}^{y}, r_{axis}^{z}\right) \\
+    \hat{\bm{q}} = -sin\frac{\theta_{c}}{2}(r_{axis}^{x}i + r_{axis}^{y}j + r_{axis}^{z}k) + cos{\frac{\theta_{c}}{2}} \\
+    = q_{x}i + q_{y}i + q_{z}j + q_{w}
   \end{align}
-  $\bm{r}$だけ平行移動する行列$T(\bm{r})$を定義し、以下の変換行列$A$を求める。
+  ただし、
   \begin{align}
-    A = T(-\bm{r_{h}}) R_{c}
+    i^{2} = j^{2} = k^{2} = -1 \\
+    jk = -kj = i  \\
+    ki = -ik = j  \\
+    ij = -ij = k
   \end{align}
-  すると、交線となる円の点群$P_{c}$と$\bm{p_{i}} \in P_{c}$は、
+  $\bm{r_{axis}}$は単位ベクトルであるから、$\hat{\bm{q}}$は単位クォータニオンである。
+  このクォータニオンを以下のように回転行列$\mathbf{R_{h}}$に変換する。
   \begin{align}
-    \bm{\bar{p}_{i}} &= cos \theta_{i} \bm{e_{x}} + sin \theta_{i} \bm{e_{y}} \\
-    \bm{p_{i}} &= A^{-1} \bm{\bar{p}_{i}} 
+    \mathbf{R_{h}}  = \left(\begin{matrix}
+      1 - 2(q_{y}^{2} + q_{z}^{2}) & 2(q_{x}q_{y} - q_{w}q_{z}) & 2(q_{x}q_{z} + q_{w}q_{y}) & 0\\
+      2(q_{x}q_{y} + q_{w}q_{z}) & 1 - 2(q_{x}^{2} + q_{z}^{2}) & 2(q_{y}q_{z} - q_{w}q_{x}) & 0 \\
+      2(q_{x}q_{z} - q_{w}q_{y}) & 2(q_{y}q_{z} + q_{w}q_{x}) & 1 - 2(q_{x}^{2} + q_{y}^{2}) & 0 \\
+      0 & 0 & 0 & 1
+    \end{matrix}
+    \right)
   \end{align}
+  平行移動行列$\mathbf{T_{h}}$と行列$\mathbf{A}$を以下のように定義する。
+  \begin{align}
+    \bm{r_{h}} &= \begin{matrix}(r_{h}^{x} & r_{h}^{y} & r_{h}^{z})^{t}\end{matrix} \\
+    \mathbf{T_{h}} &= \left(\begin{matrix}
+      1 & 0 & 0 & -r_{h}^{x} \\
+      0 & 1 & 0 & -r_{h}^{y} \\
+      0 & 0 & 1 & -r_{h}^{z} \\
+      0 & 0 & 0 & 1
+    \end{matrix}\right) \\
+    \mathbf{A} &= \mathbf{R_{h}}\mathbf{T_{h}}
+  \end{align}
+  交線となる円の点群$P_{c}$は、
+  \begin{align}
+    \bm{\bar{p}_{i}} &= \left(\begin{matrix}
+      r\,cos \theta_{i} & r\,sin \theta_{i} & 0 & 1
+    \end{matrix}\right)^{t} \\
+    \bm{\hat{p}_{i}} &= \mathbf{A}^{-1} \bm{\bar{p}_{i}} \\
+    \bm{p_{i}} &= \left(\begin{matrix}
+      1 & 0 & 0 & 0 \\
+      0 & 1 & 0 & 0 \\
+      0 & 0 & 1 & 0
+    \end{matrix}\right) \bm{\hat{p}_{i}}
+  \end{align}
+  ただし、$\bm{p_{i}} \in P_{c}$である。
 
-  \section{Experiment And Result}
-  実験はシミュレーションと、実機のそれぞれについて行った。
-  提案手法では、複数視点で点群の波打ちを低減させているが、比較のために、45度の
-  角度から１度の撮影で溶接線を検出した場合も行った。
+  \begin{figure}[htbp]
+    \begin{center}
+    \includegraphics[width=70mm]{./fig/math_fig.png}
+    \caption{Parameters used for leading weld line}
+    \label{fig:math_fig}
+    \end{center}
+  \end{figure}
+
+  % ある単位ベクトル$\bm{r}$を軸とし$\theta$回転する回転行列を$\mathbf{R(\bm{r}, \theta})$として、以下の回転行列
+  % $\mathbf{R_{c}}$を計算する
+  % \begin{align}
+  %   \mathbf{R_{c}} = (normalize(\bm{d} \times \bm{e_{z}}), -\theta_{c})
+  % \end{align}
+  % $\bm{r}$だけ平行移動する行列$T(\bm{r})$を定義し、以下の変換行列$A$を求める。
+  % \begin{align}
+  %   A = T(-\bm{r_{h}}) R_{c}
+  % \end{align}
+  % すると、交線となる円の点群$P_{c}$は、
+
+
+  \section{Experiment}
+  45度の角度で1回撮影する方法と提案手法である、溶接物に対して垂直になるように
+  撮影する手法で、それぞれ溶接線を検出した。
+  うまく検出された溶接線のうち、15パターン取り出して、その平均をとることで
+  比較した。
   
-  \subsection{Experiment Setup}
+  \subsection{Experimental Setup}
   本研究ではUFactory製の6DOF robot armであるxArmを使用した(\cref{fig:hardware_setup})。
   溶接物の撮影には、Realsense d455を使用し、これはArmの手先に取り付けられている。
   また、手先にはさらに溶接のためのトーチが取り付けられ、アーク溶接などを実行
@@ -262,12 +329,12 @@ Department \& Affiliation, Address (Street, City \& Zip Code), Country\\\\}
   を使用した。
   ロボットアーム、溶接物の配置の関係は(\cref{fig:weld_pos})のようである。
 
-  ロボットの操作のAPIにはROSを使用し、シミュレーション環境には、Gazeboを用いた。
+  ロボットの操作のAPIにはROSを使用した。
 
 
   \begin{figure}[htbp]
     \begin{center}
-    \includegraphics[width=70mm]{./fig/hardware_setup.png}
+    \includegraphics[width=70mm]{./fig/robot_coordinate.png}
     \caption{hardware setup}
     \label{fig:hardware_setup}
     \end{center}
@@ -275,7 +342,7 @@ Department \& Affiliation, Address (Street, City \& Zip Code), Country\\\\}
 
   \begin{figure}[htbp]
     \begin{center}
-    \includegraphics[width=70mm]{./fig/weld_pos.png}
+    \includegraphics[width=70mm]{./fig/weld_pos2.png}
     \caption{The position of robot and weld object}
     \label{fig:weld_pos}
     \end{center}
@@ -287,6 +354,7 @@ Department \& Affiliation, Address (Street, City \& Zip Code), Country\\\\}
   いくつかの試行を行った結果、\cref{table:ParametersSetting}のように定めた。
 
   \begin{table}[hbtp]
+    \begin{center}
 		\caption{Parameters Setting}
 		\label{table:ParametersSetting}
 		\centering
@@ -301,22 +369,42 @@ Department \& Affiliation, Address (Street, City \& Zip Code), Country\\\\}
       $\epsilon$ & 0.001 \\
       \hline
 		\end{tabular}
+  \end{center}
 	\end{table}
 
   \subsection{Results and comparison}
-  試行を15回繰り返し、その平均をとった。
+  まず、深度カメラで取得した円柱の点群を(fig)に示す。
+  図から、より円柱の形状を留めているのは、各面に対し垂直に撮影している方法
+  であると見て取れる。
+  2つの手法の比較は、溶接線の位置姿勢、大きさにより評価した。
+  位置については、溶接線の円の中心、大きさについては、円の半径を用いた。
+  回転については、溶接線の導出の処理の流れより、円柱の中心軸に依存する。
+  したがって、円柱の中心軸の傾きにより溶接線の回転を評価した。
+  また、溶接線検出の成功率は、
+  各面に対し垂直に撮影する手法は10回中8回の成功率、斜めから一度だけ撮影する
+  手法は10回中3回の成功率である。
+  なので、成功した溶接線の結果を15パターン取り出し、その平均により、溶接線の位置姿勢
+  の評価をした。
   その結果を\cref{table:experiment_result}に示す。
   ただし、Value 1は円柱の中心軸と平面との交点の真値とのずれ、
   Value 2は円柱の半径の真値とのずれ、Value 3は円柱の中心軸とロボット座標系
   のz軸との成す角である。すべて0であれば良く、Value 3は円柱が垂直に立っている
   ことをどれだけ精度良く検出できているかを表している。
 
-  シミュレーション結果では、誤差はほとんど見られなかった。
-  実機においては、単一視点より複数視点視点で点群を取得するほうが
-  結果がよくなっている。これはやはり取得する点群の波打ち、穴あきが減少したために、
+  結果より、各面に対し垂直に撮影する提案手法のほうが精度がよくなっていることが
+  わかる。
+  これはやはり取得する点群の波打ち、穴あきが減少したために、
   RANSACによる円柱と平面の推定の精度が向上したためであると考えられる。
-  シミュレーション結果での高精度からも、カメラから得られる点群の精度が大きく
-  結果に影響を与えることが分かる。
+
+  また、複数視点での真値とのずれの原因について、異なる視点で取得した点群を合成
+  したときのずれが挙げられる。
+  単一視点では合成を行わないため、このずれが発生しない。
+
+  % そして、この手法は常に結果が現れるわけではない。単一視点では、取得する点群
+  % の質が悪いため、溶接線が検出できる確率は$30\%$。
+  % 一方で複数視点では、溶接線が取得できる確率は、$80\%$であり、複数視点のほうが
+  % 溶接線の結果を得やすく、また精度も高かった。
+  
 
   
 \begin{table}[hbtp]
@@ -329,9 +417,9 @@ Department \& Affiliation, Address (Street, City \& Zip Code), Country\\\\}
     type &  Value 1[m] & Value 2[m] & Value 3[deg] \\
     \hline 
     \hline
-    simulation & $6.74\times 10^{-5}$ & $1.11\times 10^{-5}$ & $9.96\times 10^{-3}$ \\
-    単一視点 & 0.001 & 0.050 & 0.00 \\
-    複数視点 & 0.001 & 0.050 & 0.00 \\
+    % simulation & $6.74\times 10^{-5}$ & $1.11\times 10^{-5}$ & $9.96\times 10^{-3}$ \\
+    単一視点 & $2.78 \times 10^{2}$ & $1.25\times 10^{-2}$ & $7.18$ \\
+    複数視点 & $1.16 \times 10^{-2}$ & $1.16 \times 10^{-3}$ & 0.451 \\
     \hline
   \end{tabular}
 \end{table}
@@ -341,9 +429,9 @@ Department \& Affiliation, Address (Street, City \& Zip Code), Country\\\\}
   した。この処理では、機械学習を用いていないので、高性能なGPUや大量のデータセット
   が不要であった。
   
-  実験では、シミュレーションと現実環境の２種類で行い、現実環境では点群の取得
-  方法を単一視点と複数視点の２つの方法で行った。結果は、シミュレーション環境では
-  誤差はほとんど見られなかったが、実機では良くて$15mm$の誤差となった。
+  実験では、物体に対して斜めから1度の撮影で点群を取得する方法と、
+  物体に対して垂直に撮影する方法を比較した。
+  結果は、各面を垂直方向で撮影するほうが精度が向上し、良くて$12mm$の誤差となった。
   実際に溶接作業で使うにはさらに精度を上げる必要がある。実験結果からわかったように、
   点群の精度が結果の良さに影響するため、カメラの性能が上がれば結果の精度も向上
   すると考えられる。
@@ -420,8 +508,10 @@ Department \& Affiliation, Address (Street, City \& Zip Code), Country\\\\}
 	
 	
 	\section*{ACKNOWLEDGMENT}
-  甚深微妙なる叡智のもと、一切の苦厄を度されただけでなく、
-  大変丁寧なご指導をくださった辻岡哲夫准教授に熱く御礼申し上げます。
+  This work was carried out under the cooperative research with
+DAIHEN Cooperation.
+  % 甚深微妙なる叡智のもと、一切の苦厄を度されただけでなく、
+  % 大変丁寧なご指導をくださった辻岡哲夫准教授に熱く御礼申し上げます。
 	
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	
@@ -443,6 +533,9 @@ Department \& Affiliation, Address (Street, City \& Zip Code), Country\\\\}
     \bibitem{detect_welding_start_point}
     X.Z. Chen, "The autonomous detection and guiding of start welding position for
       arc welding robot," Industrial Robot: An International Journal 37/1 (2010) 70-78
+
+    \bibitem{seam_extraction}
+    L. Yang, E. Li, T. Long, J. Fan and Z. Liang, "A High-Speed Seam Extraction Method Based on the Novel Structured-Light Sensor for Arc Welding Robot: A Review," in IEEE Sensors Journal, vol. 18, no. 21, pp. 8631-8641, 1 Nov.1, 2018, doi: 10.1109/JSEN.2018.2867581.
 
     \bibitem{ransac}
     A. M. Fischler and C. R. Bolles, “Random Sample Consensus: A Paradigm for Model Fitting 
